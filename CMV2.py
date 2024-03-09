@@ -8,11 +8,11 @@ con = sqlite3.connect("guilds.db")
 cur = con.cursor()
 
 #CREATE TABLE FOR DATABASE
-cur.execute("CREATE TABLE IF NOT EXISTS guilds(guildId text PRIMARY KEY, channelId text, messageId text, mcserverId text, portId text)")
+cur.execute("CREATE TABLE IF NOT EXISTS guilds(guildId text PRIMARY KEY, channelId text, messageId text, mcserverId text, portId text, imageId text)")
 con.commit()
 
 #SETTING UP THE BOT
-BOT_TOKEN = "MTIxNDcwNjA4MTg2MzgzMTYyNA.GxQBEF.i-vPAepqtDCR4CHro9GG841GZwVIMmuUodTawg"
+BOT_TOKEN = "MTIxNDcwNjA4MTg2MzgzMTYyNA.GnFXv1.am1TJEd9Ksluokhp6ZYFJiZK0AHDUp0nFp5NbU"
 
 bot = commands.Bot(command_prefix = "CM ", intents=discord.Intents.all())
 
@@ -22,10 +22,11 @@ async def on_guild_join(guild):
     guild_id = guild.id
     channel = guild.system_channel
     channel_id = channel.id
+    image_id = "https://static.wikia.nocookie.net/minecraft/images/f/fe/GrassNew.png/revision/latest/scale-to-width/360?cb=20190903234415"
 
     await channel.send("CraftMonitor is online!")
 
-    cur.execute(f"INSERT INTO guilds(guildId, channelId) VALUES ('{guild_id}', '{channel_id}')")
+    cur.execute(f"INSERT INTO guilds(guildId, channelId, imageId) VALUES ('{guild_id}', '{channel_id}','{image_id}')")
     con.commit()
 
 @bot.event
@@ -56,12 +57,16 @@ async def initialize_embed(serverID,channel,guild_id, port_id=None):
         status = "ONLINE"
     else:
         status = "OFFLINE"
+
+    cur.execute("SELECT imageId FROM guilds")
+    image_id = cur.fetchone()
+    image_id = str(image_id[0])    
     
     embed=discord.Embed(title=f"Status for {serverID}",
                         description=f"Server Status: __**{status}**__ \nPlayers online: {player_count}\n Latency: {latency}ms",
                         color=discord.Color.dark_green()
                             )
-    embed.set_thumbnail(url="https://static.wikia.nocookie.net/minecraft/images/f/fe/GrassNew.png/revision/latest/scale-to-width/360?cb=20190903234415")
+    embed.set_thumbnail(url= f"{image_id}")
     message = await channel.send(embed = embed)
     cur.execute("UPDATE guilds SET messageId = ? WHERE guildId = ?", (message.id, guild_id))
     con.commit()
@@ -115,11 +120,15 @@ async def check_data():
         else:
             status = "OFFLINE"
         
-        cur.execute(f"SELECT channelId FROM guilds where guildId = ?", (str(guildslst[i]),))
+        cur.execute("SELECT imageId FROM guilds WHERE guildId = ?", (str(guildslst[i]),))
+        image_id = cur.fetchone()
+        image_id = str(image_id[0])
+
+        cur.execute(f"SELECT channelId FROM guilds WHERE guildId = ?", (str(guildslst[i]),))
         channel = cur.fetchone()
         channel = int(channel[0])
 
-        #SELECT A MESSAGE FROM DATABASE A GUILD i
+        #SELECT A MESSAGE FROM DATABASE A GUILD AT INDEX 'i'
         cur.execute(f"SELECT messageId FROM guilds WHERE guildId = ?", (str(guildslst[i]),))
         message = cur.fetchone()
         #CHECK IF MESSAGE IS NOT EMPTY (IT EXISTS)
@@ -137,12 +146,14 @@ async def check_data():
                             description=f"Server Status: __**{status}**__ \nPlayers online: {player_count}\n Latency: {latency}ms",
                             color=discord.Color.dark_green()
                                 )
+                        new_embed.set_thumbnail(url= f"{image_id}")
                         await message2.edit(embed=new_embed)   
                     except discord.NotFound:
                         embed=discord.Embed(title=f"Status for {serverID}",
                             description=f"Server Status: __**{status}**__ \nPlayers online: {player_count}\n Latency: {latency}ms",
                             color=discord.Color.dark_green()
                             )
+                        new_embed.set_thumbnail(url= f"{image_id}")
                         message = await channelobj.send(embed = embed)
                         cur.execute(f"UPDATE guilds SET messageId = ? WHERE guildId = ?", (message.id, str(guildslst[i])))
                         con.commit()
