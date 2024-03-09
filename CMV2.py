@@ -12,7 +12,7 @@ cur.execute("CREATE TABLE IF NOT EXISTS guilds(guildId text PRIMARY KEY, channel
 con.commit()
 
 #SETTING UP THE BOT
-BOT_TOKEN = "MTIxNDcwNjA4MTg2MzgzMTYyNA.GnLF0j.tRQC4OGF_1ppLdvwAMDHRIDZ_Z7Gheo2834Y8o"
+BOT_TOKEN = "MTIxNDcwNjA4MTg2MzgzMTYyNA.GxQBEF.i-vPAepqtDCR4CHro9GG841GZwVIMmuUodTawg"
 
 bot = commands.Bot(command_prefix = "CM ", intents=discord.Intents.all())
 
@@ -28,6 +28,13 @@ async def on_guild_join(guild):
     cur.execute(f"INSERT INTO guilds(guildId, channelId) VALUES ('{guild_id}', '{channel_id}')")
     con.commit()
 
+@bot.event
+async def on_guild_remove(guild):
+    guild_id = guild.id
+
+    cur.execute(f"DELETE FROM guilds WHERE guildId = ?",(guild_id,))
+    con.commit()
+ 
 #ON BOT READY 
 @bot.event
 async def on_ready():
@@ -54,6 +61,7 @@ async def initialize_embed(serverID,channel,guild_id, port_id=None):
                         description=f"Server Status: __**{status}**__ \nPlayers online: {player_count}\n Latency: {latency}ms",
                         color=discord.Color.dark_green()
                             )
+    embed.set_thumbnail(url="https://static.wikia.nocookie.net/minecraft/images/f/fe/GrassNew.png/revision/latest/scale-to-width/360?cb=20190903234415")
     message = await channel.send(embed = embed)
     cur.execute("UPDATE guilds SET messageId = ? WHERE guildId = ?", (message.id, guild_id))
     con.commit()
@@ -146,8 +154,7 @@ async def check_data():
         else: 
             print("No message is found in the database")
             continue
-    
-    
+       
 #BOT COMMANDS
 
 #Changes the home channel for the bot
@@ -207,6 +214,26 @@ async def serverstatus(ctx, serverID, port_id=None):
     con.commit()
 
     message = await initialize_embed(serverID,channel,guild_id,port_id)
+
+
+@bot.command()
+async def deleteall(ctx):
+    bot_member = ctx.guild.get_member(bot.user.id)
+    print("Hello world")
+    for channel in ctx.guild.text_channels:
+        if (channel):
+            async for message in channel.history(limit=None):
+                print(message)
+                if (message):
+                    if message.author == bot_member:
+                        print("Deleting message...")
+                        await message.delete()
+                    else:
+                        print("Author is not the bot.")
+                else:
+                    print("No message found")
+        else:
+            print("No Channel Found")
 
 #RUNS THE BOT CONTINUOSLY
 bot.run(BOT_TOKEN)

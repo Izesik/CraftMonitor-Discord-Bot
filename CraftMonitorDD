@@ -14,3 +14,7 @@ Commands:
 3. server_status - Fetches data for server and displays in an embed
     -   Update the data in time intervals(X) and edit the embed to reflect the updates after this function is called
     -   will first check that the bot has been configured for the particular server 
+
+TODO:
+    - Add image support 
+    - make delete messages after switching servers.
